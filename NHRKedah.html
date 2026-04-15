@@ -1,0 +1,128 @@
+<!DOCTYPE html>
+<html lang="ms">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Pangkalan Data Pendaftaran Hypertensi JKN Kedah</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+        body { font-family: 'Inter', sans-serif; background-color: #f8fafc; }
+        .glass-panel {
+            background: rgba(255, 255, 255, 0.9);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+        }
+    </style>
+</head>
+<body class="text-slate-800 antialiased p-6">
+
+    <div class="max-w-7xl mx-auto">
+        <header class="mb-8 flex items-center justify-between">
+            <div>
+                <h1 class="text-3xl font-bold tracking-tight text-slate-900">Pangkalan Data Registri Hypertensi</h1>
+                <p class="text-slate-500 mt-1">Data ditarik secara automatik dari Google Sheets (Peringkat Daerah)</p>
+            </div>
+            <div id="last-updated" class="text-sm font-medium text-emerald-600 bg-emerald-50 px-3 py-1 rounded-full">
+                Sedang memuat data...
+            </div>
+        </header>
+
+        <div class="glass-panel rounded-2xl overflow-hidden">
+            <div class="overflow-x-auto">
+                <table class="w-full text-sm text-left">
+                    <thead class="bg-slate-50 text-slate-600 border-b border-slate-200">
+                        <tr>
+                            <th class="px-6 py-4 font-semibold text-left">No.</th>
+                            <th class="px-6 py-4 font-semibold text-left">Daerah</th>
+                            <th class="px-6 py-4 font-semibold text-right">Jumlah Pendaftaran</th>
+                            <th class="px-6 py-4 font-semibold text-right">Kes Baru</th>
+                            <th class="px-6 py-4 font-semibold text-right">Kes Aktif</th>
+                            <th class="px-6 py-4 font-semibold text-right">Diagnosa Tahun Semasa</th>
+                        </tr>
+                    </thead>
+                    <tbody id="data-table-body" class="divide-y divide-slate-100">
+                        <tr>
+                            <td colspan="6" class="px-6 py-8 text-center text-slate-400">
+                                <div class="animate-pulse flex flex-col items-center">
+                                    <div class="h-4 w-48 bg-slate-200 rounded mb-2"></div>
+                                    <div class="text-xs">Mengambil data dari Google Sheets...</div>
+                                </div>
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <!-- PapaParse for easy CSV parsing -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.4.1/papaparse.min.js"></script>
+    <script>
+        // Google Sheets CSV Export URL based on the provided link
+        const sheetUrl = "https://docs.google.com/spreadsheets/d/1HVtpvoPzSO2YbrHBwyl9xIOQTxtgXuEt-mU2Nw7qk8A/export?format=csv&gid=1528753332";
+
+        document.addEventListener('DOMContentLoaded', () => {
+            fetchData();
+        });
+
+        function fetchData() {
+            Papa.parse(sheetUrl, {
+                download: true,
+                header: false,
+                complete: function(results) {
+                    processData(results.data);
+                },
+                error: function(err) {
+                    console.error("Error fetching data:", err);
+                    document.getElementById('data-table-body').innerHTML = `
+                        <tr><td colspan="6" class="px-6 py-8 text-center text-red-500">Ralat semasa memuat turun data. Sila pastikan Sheet adalah 'Public'.</td></tr>
+                    `;
+                }
+            });
+        }
+
+        function processData(data) {
+            const tbody = document.getElementById('data-table-body');
+            tbody.innerHTML = ''; // Clear loading state
+            
+            // In the provided CSV, district data starts around row 22 (index 21)
+            let hasData = false;
+            
+            data.forEach(row => {
+                // Check if row looks like a district row (has number in col 1, district name in col 3)
+                if (row.length > 5 && !isNaN(parseInt(row[0])) && row[3]) {
+                    hasData = true;
+                    
+                    const no = row[0];
+                    const daerah = row[3];
+                    const jumlahDaftar = parseInt(row[4]).toLocaleString();
+                    const kesBaru = parseInt(row[13]).toLocaleString();
+                    const kesAktif = parseInt(row[15]).toLocaleString();
+                    const diagTahunSemasa = parseInt(row[22]).toLocaleString();
+
+                    const tr = document.createElement('tr');
+                    tr.className = "hover:bg-slate-50 transition-colors";
+                    tr.innerHTML = `
+                        <td class="px-6 py-4 font-medium text-slate-500">${no}</td>
+                        <td class="px-6 py-4 font-semibold text-slate-800">${daerah}</td>
+                        <td class="px-6 py-4 text-right font-medium text-slate-700">${jumlahDaftar}</td>
+                        <td class="px-6 py-4 text-right text-slate-600">${kesBaru}</td>
+                        <td class="px-6 py-4 text-right text-emerald-600 font-medium">${kesAktif}</td>
+                        <td class="px-6 py-4 text-right text-blue-600 font-medium">${diagTahunSemasa}</td>
+                    `;
+                    tbody.appendChild(tr);
+                }
+            });
+
+            if (!hasData) {
+                tbody.innerHTML = `<tr><td colspan="6" class="px-6 py-8 text-center text-slate-500">Tiada data daerah dijumpai dalam helaian ini.</td></tr>`;
+            }
+
+            const now = new Date();
+            document.getElementById('last-updated').textContent = "Data dikemaskini: " + now.toLocaleTimeString('ms-MY');
+        }
+    </script>
+</body>
+</html>
