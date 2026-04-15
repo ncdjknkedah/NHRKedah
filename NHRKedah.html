@@ -92,15 +92,15 @@
             
             data.forEach(row => {
                 // Check if row looks like a district row (has number in col 1, district name in col 3)
-                if (row.length > 5 && !isNaN(parseInt(row[0])) && row[3]) {
+                if (row.length > 5 && row[1] && !isNaN(parseInt(row[1])) && row[3]) {
                     hasData = true;
                     
-                    const no = row[0];
+                    const no = row[1];
                     const daerah = row[3];
-                    const jumlahDaftar = parseInt(row[4]).toLocaleString();
-                    const kesBaru = parseInt(row[13]).toLocaleString();
-                    const kesAktif = parseInt(row[15]).toLocaleString();
-                    const diagTahunSemasa = parseInt(row[22]).toLocaleString();
+                    const jumlahDaftar = parseInt(row[4] || 0).toLocaleString();
+                    const kesBaru = parseInt(row[15] || 0).toLocaleString();
+                    const kesAktif = parseInt(row[17] || 0).toLocaleString();
+                    const diagTahunSemasa = parseInt(row[22] || 0).toLocaleString();
 
                     const tr = document.createElement('tr');
                     tr.className = "hover:bg-slate-50 transition-colors";
