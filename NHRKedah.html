@@ -501,12 +501,16 @@
         }
 
         function aggregateDemographics(dataArr, label) {
-            let res = { name: label, male:0, female:0, malay:0, chinese:0, indian:0, sabah:0, sarawak:0, asli:0, others:0, nonMy:0 };
+            let res = { name: label, male:0, female:0, malay:0, chinese:0, indian:0, sabah:0, sarawak:0, asli:0, others:0, nonMy:0,
+                        kesBaru:0, transferIn:0, aktif:0, transferOut:0, dm:0, mati:0, lfu:0, diagnosaSemasa:0 };
             dataArr.forEach(d => {
                 res.male+=d.male; res.female+=d.female;
                 res.malay+=d.malay; res.chinese+=d.chinese; res.indian+=d.indian;
                 res.sabah+=d.sabah; res.sarawak+=d.sarawak; res.asli+=d.asli;
                 res.others+=d.others; res.nonMy+=d.nonMy;
+                res.kesBaru+=d.kesBaru; res.transferIn+=d.transferIn;
+                res.aktif+=d.aktif; res.transferOut+=d.transferOut; res.dm+=d.dm; res.mati+=d.mati; res.lfu+=d.lfu;
+                res.diagnosaSemasa+=d.diagnosaSemasa;
             });
             res.totalGen = res.male + res.female;
             res.totalEth = res.malay+res.chinese+res.indian+res.sabah+res.sarawak+res.asli+res.others+res.nonMy;
@@ -556,6 +560,47 @@
                             `).join('')}
                         </div>
                     </div>
+
+                    <!-- Case Types & Status Cards -->
+                    <div class="bg-white p-6 rounded-xl shadow-sm border border-slate-200 md:col-span-2">
+                        <h4 class="text-slate-500 font-semibold mb-4 uppercase text-xs tracking-widest"><i class="fa-solid fa-file-medical mr-2"></i>Status & Jenis Kes</h4>
+                        <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+                            <div class="bg-slate-50 border border-slate-200 p-4 rounded-lg text-center">
+                                <div class="text-xs text-slate-500 font-medium mb-1">KES BARU</div>
+                                <div class="text-xl font-bold text-slate-800">${data.kesBaru.toLocaleString()}</div>
+                            </div>
+                            <div class="bg-teal-50 border border-teal-100 p-4 rounded-lg text-center">
+                                <div class="text-xs text-teal-600 font-medium mb-1">TRANSFER IN</div>
+                                <div class="text-xl font-bold text-teal-900">${data.transferIn.toLocaleString()}</div>
+                            </div>
+                            <div class="bg-emerald-50 border border-emerald-100 p-4 rounded-lg text-center">
+                                <div class="text-xs text-emerald-600 font-medium mb-1">AKTIF</div>
+                                <div class="text-xl font-bold text-emerald-900">${data.aktif.toLocaleString()}</div>
+                            </div>
+                            <div class="bg-blue-50 border border-blue-100 p-4 rounded-lg text-center">
+                                <div class="text-xs text-blue-600 font-medium mb-1">DIAGNOSA THN SEMASA</div>
+                                <div class="text-xl font-bold text-blue-900">${data.diagnosaSemasa.toLocaleString()}</div>
+                            </div>
+                            
+                            <div class="bg-orange-50 border border-orange-100 p-4 rounded-lg text-center">
+                                <div class="text-xs text-orange-600 font-medium mb-1">TRANSFER OUT</div>
+                                <div class="text-xl font-bold text-orange-900">${data.transferOut.toLocaleString()}</div>
+                            </div>
+                            <div class="bg-purple-50 border border-purple-100 p-4 rounded-lg text-center">
+                                <div class="text-xs text-purple-600 font-medium mb-1">DM</div>
+                                <div class="text-xl font-bold text-purple-900">${data.dm.toLocaleString()}</div>
+                            </div>
+                            <div class="bg-red-50 border border-red-100 p-4 rounded-lg text-center">
+                                <div class="text-xs text-red-600 font-medium mb-1">MATI</div>
+                                <div class="text-xl font-bold text-red-900">${data.mati.toLocaleString()}</div>
+                            </div>
+                            <div class="bg-amber-50 border border-amber-100 p-4 rounded-lg text-center">
+                                <div class="text-xs text-amber-600 font-medium mb-1">LFU</div>
+                                <div class="text-xl font-bold text-amber-900">${data.lfu.toLocaleString()}</div>
+                            </div>
+                        </div>
+                    </div>
+
                 </div>
             `;
         }
@@ -563,7 +608,7 @@
         function renderMultiComparisonChart(dataArr, container, titleLabel) {
             container.innerHTML = `
                 <div class="mb-4">
-                    <h3 class="text-lg font-bold text-slate-700 mb-4"><i class="fa-solid fa-chart-simple text-indigo-500 mr-2"></i>${titleLabel}</h3>
+                    <h3 class="text-lg font-bold text-slate-700 mb-4"><i class="fa-solid fa-chart-simple text-indigo-500 mr-2"></i>${titleLabel} (Demografi)</h3>
                 </div>
                 
                 <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
@@ -574,8 +619,24 @@
                         <canvas id="chart-ethnicity-pie"></canvas>
                     </div>
                 </div>
-                <div class="bg-white p-4 rounded-xl shadow-sm border border-slate-200">
+                <div class="bg-white p-4 rounded-xl shadow-sm border border-slate-200 mb-10">
                     <canvas id="chart-ethnicity-bar" height="100"></canvas>
+                </div>
+                
+                <div class="mb-4 border-t border-slate-200 pt-8 mt-8">
+                    <h3 class="text-lg font-bold text-slate-700 mb-4"><i class="fa-solid fa-file-waveform text-emerald-500 mr-2"></i>Status & Jenis Kes Diagnosa</h3>
+                </div>
+
+                <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
+                    <div class="bg-white p-4 rounded-xl shadow-sm border border-slate-200">
+                        <canvas id="chart-casetype"></canvas>
+                    </div>
+                    <div class="bg-white p-4 rounded-xl shadow-sm border border-slate-200">
+                        <canvas id="chart-diag"></canvas>
+                    </div>
+                </div>
+                <div class="bg-white p-4 rounded-xl shadow-sm border border-slate-200">
+                    <canvas id="chart-status" height="100"></canvas>
                 </div>
             `;
 
@@ -592,11 +653,7 @@
                         { label: 'Perempuan', data: dataArr.map(d=>d.female), backgroundColor: '#ec4899', borderRadius: 4 }
                     ]
                 },
-                options: {
-                    responsive: true,
-                    plugins: { title: { display: true, text: 'Perbandingan Jantina (Fasiliti/Daerah)', padding: 20 } },
-                    scales: { y: { beginAtZero: true } }
-                }
+                options: { responsive: true, plugins: { title: { display: true, text: 'Perbandingan Jantina (Fasiliti/Daerah)', padding: 10 } }, scales: { y: { beginAtZero: true } } }
             });
 
             // 2. Ethnicity Stacked Bar
@@ -613,11 +670,7 @@
                         { label: 'Bukan Warga', data: dataArr.map(d=>d.nonMy), backgroundColor: '#64748b' }
                     ]
                 },
-                options: {
-                    responsive: true,
-                    plugins: { title: { display: true, text: 'Perbandingan Demografi Etnik Mengikut Lokasi', padding: 20 } },
-                    scales: { x: { stacked: true }, y: { stacked: true, beginAtZero: true } }
-                }
+                options: { responsive: true, plugins: { title: { display: true, text: 'Perbandingan Demografi Etnik Mengikut Lokasi', padding: 10 } }, scales: { x: { stacked: true }, y: { stacked: true, beginAtZero: true } } }
             });
 
             // 3. Ethnicity Agreggate Pie
@@ -632,17 +685,53 @@
                 type: 'doughnut',
                 data: {
                     labels: ['Melayu', 'Cina', 'India', 'Lain-lain / Bumiputera', 'Bukan Warga'],
-                    datasets: [{
-                        data: aggEths,
-                        backgroundColor: ['#10b981', '#ef4444', '#f59e0b', '#8b5cf6', '#64748b'],
-                        borderWidth: 0
-                    }]
+                    datasets: [{ data: aggEths, backgroundColor: ['#10b981', '#ef4444', '#f59e0b', '#8b5cf6', '#64748b'], borderWidth: 0 }]
                 },
-                options: {
-                    responsive: true,
-                    plugins: { title: { display: true, text: 'Perkadaran Etnik Keseluruhan (Subset Pilihan)', padding: 20 } },
-                    cutout: '60%'
-                }
+                options: { responsive: true, plugins: { title: { display: true, text: 'Perkadaran Etnik Keseluruhan (Subset Pilihan)', padding: 10 } }, cutout: '60%' }
+            });
+
+            // 4. Case Type Bar Chart
+            const ctxCase = document.getElementById('chart-casetype').getContext('2d');
+            demCharts.casetype = new Chart(ctxCase, {
+                type: 'bar',
+                data: {
+                    labels: labels,
+                    datasets: [
+                        { label: 'Kes Baru', data: dataArr.map(d=>d.kesBaru), backgroundColor: '#475569', borderRadius: 4 },
+                        { label: 'Transfer In', data: dataArr.map(d=>d.transferIn), backgroundColor: '#14b8a6', borderRadius: 4 }
+                    ]
+                },
+                options: { responsive: true, plugins: { title: { display: true, text: 'Perbandingan Jenis Kes', padding: 10 } }, scales: { y: { beginAtZero: true } } }
+            });
+
+            // 5. Current Status Stacked Bar
+            const ctxStatus = document.getElementById('chart-status').getContext('2d');
+            demCharts.status = new Chart(ctxStatus, {
+                type: 'bar',
+                data: {
+                    labels: labels,
+                    datasets: [
+                        { label: 'Aktif', data: dataArr.map(d=>d.aktif), backgroundColor: '#10b981' },
+                        { label: 'Transfer Out', data: dataArr.map(d=>d.transferOut), backgroundColor: '#f97316' },
+                        { label: 'DM', data: dataArr.map(d=>d.dm), backgroundColor: '#a855f7' },
+                        { label: 'LFU', data: dataArr.map(d=>d.lfu), backgroundColor: '#f59e0b' },
+                        { label: 'Mati', data: dataArr.map(d=>d.mati), backgroundColor: '#ef4444' }
+                    ]
+                },
+                options: { responsive: true, plugins: { title: { display: true, text: 'Perbandingan Status Semasa Pendaftaran', padding: 10 } }, scales: { x: { stacked: true }, y: { stacked: true, beginAtZero: true } } }
+            });
+
+            // 6. Diagnosa Tahun Semasa
+            const ctxDiag = document.getElementById('chart-diag').getContext('2d');
+            demCharts.diag = new Chart(ctxDiag, {
+                type: 'bar',
+                data: {
+                    labels: labels,
+                    datasets: [
+                        { label: 'Diagnosa Thn Semasa', data: dataArr.map(d=>d.diagnosaSemasa), backgroundColor: '#3b82f6', borderRadius: 4 }
+                    ]
+                },
+                options: { responsive: true, plugins: { title: { display: true, text: 'Pesakit Didiagnosa Pada Tahun Semasa', padding: 10 } }, scales: { y: { beginAtZero: true } } }
             });
         }
     </script>
