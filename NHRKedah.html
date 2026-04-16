@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Dashboard Pendaftaran Hypertensi Klinik Kesihatan JKN Kedah</title>
+    <title>Dashboard Registri Hypertensi JKN Kedah</title>
     
     <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
@@ -11,95 +11,189 @@
     <!-- DataTables CSS for Tailwind -->
     <link rel="stylesheet" type="text/css" href="https://cdn.datatables.net/v/dt/dt-1.13.2/datatables.min.css"/>
     
+    <!-- Chart.js -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+    <!-- FontAwesome for Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
         body { font-family: 'Inter', sans-serif; background-color: #f8fafc; }
         
         /* Custom tweaks for datatables integrating with tailwind */
-        .dataTables_wrapper .dataTables_length select {
-            border: 1px solid #e2e8f0;
-            border-radius: 0.375rem;
-            padding: 0.25rem 0.5rem;
-        }
+        .dataTables_wrapper .dataTables_length select,
         .dataTables_wrapper .dataTables_filter input {
             border: 1px solid #e2e8f0;
             border-radius: 0.375rem;
             padding: 0.25rem 0.5rem;
             margin-left: 0.5rem;
+            font-size: 0.875rem;
+        }
+        
+        .sidebar-link {
+            transition: all 0.2s ease-in-out;
+        }
+        .sidebar-link.active {
+            background-color: #1e293b;
+            border-left: 4px solid #emerald-500;
+            color: #10b981;
+        }
+        ::-webkit-scrollbar {
+            width: 8px;
+            height: 8px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #f1f5f9; 
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #cbd5e1; 
+            border-radius: 4px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: #94a3b8; 
+        }
+        .checkbox-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+            gap: 10px;
         }
     </style>
 </head>
-<body class="text-slate-800 antialiased p-6 min-h-screen">
+<body class="text-slate-800 antialiased flex h-screen overflow-hidden">
 
-    <div class="max-w-screen-2xl mx-auto">
-        <header class="mb-8 flex flex-col md:flex-row md:items-center justify-between gap-4">
-            <div>
-                <h1 class="text-3xl font-bold tracking-tight text-slate-900">Dashboard Registri Hypertensi (Peringkat Klinik)</h1>
-                <p class="text-slate-500 mt-1">Data digabungkan secara automatik dari Google Sheets berbilang daerah.</p>
+    <!-- Sidebar -->
+    <aside class="w-64 bg-slate-900 text-slate-300 flex flex-col shadow-xl z-20">
+        <div class="p-6 border-b border-slate-800">
+            <div class="flex items-center gap-3">
+                <i class="fa-solid fa-heart-pulse text-emerald-500 text-2xl"></i>
+                <h1 class="text-xl font-bold text-white tracking-tight leading-tight">Registri<br>Hypertensi</h1>
             </div>
-            <div id="status-badge" class="text-sm font-medium text-amber-600 bg-amber-50 px-4 py-2 rounded-full flex items-center shadow-sm">
-                <svg class="animate-spin -ml-1 mr-2 h-4 w-4 text-amber-600" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                    <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
-                    <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                </svg>
-                Memuat turun & memproses data...
-            </div>
-        </header>
+            <p class="text-xs text-slate-500 mt-2">Peringkat Negeri Kedah</p>
+        </div>
+        
+        <nav class="flex-1 p-4 space-y-2">
+            <a href="#" onclick="switchTab('senarai')" id="nav-senarai" class="sidebar-link active flex items-center gap-3 px-4 py-3 rounded-lg hover:bg-slate-800 text-sm font-medium">
+                <i class="fa-solid fa-table-list w-5 text-center"></i>
+                Senarai Pendaftaran
+            </a>
+            <a href="#" onclick="switchTab('analitik')" id="nav-analitik" class="sidebar-link flex items-center gap-3 px-4 py-3 rounded-lg hover:bg-slate-800 text-sm font-medium">
+                <i class="fa-solid fa-chart-pie w-5 text-center"></i>
+                Analitik Demografi
+            </a>
+        </nav>
 
-        <!-- Filters -->
-        <div class="bg-white p-4 rounded-xl shadow-sm border border-slate-200 mb-6 grid grid-cols-1 md:grid-cols-3 gap-4">
-            <div>
-                <label class="block text-sm font-medium text-slate-700 mb-1">Tapis Daerah</label>
-                <select id="filter-daerah" class="w-full border-slate-300 rounded-lg shadow-sm p-2 border focus:border-emerald-500 focus:ring-emerald-500">
-                    <option value="">Semua Daerah</option>
-                </select>
+        <div class="p-4 border-t border-slate-800 text-xs text-slate-500">
+            <div id="status-badge" class="flex items-center gap-2 mb-2 text-emerald-400">
+                <i class="fa-solid fa-circle-notch fa-spin"></i> Memuat data...
             </div>
-            <div>
-                <label class="block text-sm font-medium text-slate-700 mb-1">Tapis Klinik Kesihatan</label>
-                <select id="filter-kk" class="w-full border-slate-300 rounded-lg shadow-sm p-2 border focus:border-emerald-500 focus:ring-emerald-500">
-                    <option value="">Semua Klinik</option>
-                </select>
+            <p>Sistem mengemas kini data secara waktu nyata dari pelayan helaian (Google Sheets).</p>
+        </div>
+    </aside>
+
+    <!-- Main Content -->
+    <main class="flex-1 bg-slate-50 overflow-y-auto relative hidden-scroll">
+        
+        <!-- ======================= TAB: SENARAI PENDAFTARAN ======================= -->
+        <div id="view-senarai" class="p-8 max-w-screen-2xl mx-auto block">
+            <header class="mb-8">
+                <h2 class="text-3xl font-bold tracking-tight text-slate-900">Senarai Pendaftaran Fasiliti</h2>
+                <p class="text-slate-500 mt-1">Jadual terperinci maklumat perawatan pesakit</p>
+            </header>
+
+            <!-- Metric Cards -->
+            <div class="grid grid-cols-2 md:grid-cols-5 gap-4 mb-6" id="summary-cards"></div>
+
+            <!-- Filters -->
+            <div class="bg-white p-4 rounded-xl shadow-sm border border-slate-200 mb-6 grid grid-cols-1 md:grid-cols-3 gap-4">
+                <div>
+                    <label class="block text-sm font-medium text-slate-700 mb-1">Tapis Daerah</label>
+                    <select id="filter-daerah" class="w-full border-slate-300 rounded-lg shadow-sm p-2 border focus:border-emerald-500 focus:outline-none">
+                        <option value="">Semua Daerah</option>
+                    </select>
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-slate-700 mb-1">Tapis Klinik Kesihatan</label>
+                    <select id="filter-kk" class="w-full border-slate-300 rounded-lg shadow-sm p-2 border focus:border-emerald-500 focus:outline-none">
+                        <option value="">Semua Klinik</option>
+                    </select>
+                </div>
+                <div class="flex items-end">
+                    <button onclick="resetFilters()" class="px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-lg transition-colors font-medium text-sm">
+                        <i class="fa-solid fa-rotate-left mr-1"></i> Batal Tapis
+                    </button>
+                </div>
             </div>
-            <div class="flex items-end">
-                <button onclick="resetFilters()" class="px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-lg transition-colors font-medium">Batal Tapis</button>
+
+            <!-- Table -->
+            <div class="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
+                <div class="p-4 overflow-x-auto">
+                    <table id="klinik-table" class="stripe hover w-full text-sm">
+                        <thead>
+                            <tr class="bg-slate-100 text-slate-600">
+                                <th class="py-3 px-4 text-left">Daerah</th>
+                                <th class="py-3 px-4 text-left">Klinik Kesihatan</th>
+                                <th class="py-3 px-4 text-right">Pendaftaran</th>
+                                <th class="py-3 px-4 text-right">Kes Baru</th>
+                                <th class="py-3 px-4 text-right">Transfer In</th>
+                                <th class="py-3 px-4 text-right text-emerald-600">Aktif</th>
+                                <th class="py-3 px-4 text-right">Transfer Out</th>
+                                <th class="py-3 px-4 text-right">DM</th>
+                                <th class="py-3 px-4 text-right text-red-500">Mati</th>
+                                <th class="py-3 px-4 text-right text-orange-500">LFU</th>
+                                <th class="py-3 px-4 text-right text-blue-600">Diag Thn Semasa</th>
+                                <th class="py-3 px-4 text-right text-slate-400">Kemaskini</th>
+                            </tr>
+                        </thead>
+                        <tbody id="table-body"></tbody>
+                    </table>
+                </div>
             </div>
         </div>
 
-        <!-- Metric Cards -->
-        <div class="grid grid-cols-2 md:grid-cols-5 gap-4 mb-6" id="summary-cards">
-            <!-- Populated via JS -->
+        <!-- ======================= TAB: ANALITIK DEMOGRAFI ======================= -->
+        <div id="view-analitik" class="p-8 max-w-screen-2xl mx-auto hidden">
+            <header class="mb-8 flex justify-between items-end">
+                <div>
+                    <h2 class="text-3xl font-bold tracking-tight text-slate-900">Analitik Demografi</h2>
+                    <p class="text-slate-500 mt-1">Perbandingan jantina dan taburan etnik fasiliti</p>
+                </div>
+            </header>
+
+            <!-- Demography Controls -->
+            <div class="bg-white p-6 rounded-xl shadow-sm border border-slate-200 mb-6 font-medium text-sm">
+                
+                <div class="flex items-center gap-4 mb-4 pb-4 border-b border-slate-100">
+                    <div class="w-1/3">
+                        <label class="block text-slate-700 mb-1">Pilih Daerah:</label>
+                        <select id="demo-daerah-select" class="w-full border-slate-300 rounded-lg p-2 border focus:outline-none focus:border-indigo-500 bg-slate-50">
+                            <option value="ALL">Keseluruhan Negeri Kedah (Banding Daerah)</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div id="kk-checkbox-container" class="hidden">
+                    <div class="flex justify-between items-center mb-3">
+                        <label class="text-slate-700">Pilih Fasiliti untuk Perbandingan:</label>
+                        <label class="flex items-center gap-2 cursor-pointer text-indigo-600 bg-indigo-50 px-3 py-1 rounded-md hover:bg-indigo-100 transition">
+                            <input type="checkbox" id="demo-select-all" class="accent-indigo-600" onchange="toggleAllKKs(this)"> Pilih Semua
+                        </label>
+                    </div>
+                    <div class="checkbox-grid bg-slate-50 border border-slate-100 p-4 rounded-lg max-h-48 overflow-y-auto" id="kk-checkbox-list">
+                        <!-- Checkboxes populated via JS -->
+                    </div>
+                </div>
+
+            </div>
+
+            <!-- Demography Dynamic Output Container -->
+            <div id="demo-output-container" class="min-h-[400px]">
+                <!-- Will render Scorecards OR Charts based on selection count -->
+            </div>
+            
         </div>
 
-        <!-- Table -->
-        <div class="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
-            <div class="p-4 border-b border-slate-200 bg-slate-50">
-                <h2 class="font-semibold text-slate-800">Senarai Terperinci</h2>
-            </div>
-            <div class="p-4 overflow-x-auto">
-                <table id="klinik-table" class="stripe hover w-full text-sm">
-                    <thead>
-                        <tr class="bg-slate-100 text-slate-600">
-                            <th class="py-3 px-4 text-left">Daerah</th>
-                            <th class="py-3 px-4 text-left">Klinik Kesihatan</th>
-                            <th class="py-3 px-4 text-right">Pendaftaran</th>
-                            <th class="py-3 px-4 text-right">Kes Baru</th>
-                            <th class="py-3 px-4 text-right">Transfer In</th>
-                            <th class="py-3 px-4 text-right text-emerald-600">Aktif</th>
-                            <th class="py-3 px-4 text-right">Transfer Out</th>
-                            <th class="py-3 px-4 text-right">DM</th>
-                            <th class="py-3 px-4 text-right text-red-500">Mati</th>
-                            <th class="py-3 px-4 text-right text-orange-500">LFU</th>
-                            <th class="py-3 px-4 text-right text-blue-600">Diag Tahun Semasa</th>
-                            <th class="py-3 px-4 text-right text-slate-500">Tarikh Kemaskini</th>
-                        </tr>
-                    </thead>
-                    <tbody id="table-body">
-                        <!-- Filled by JS -->
-                    </tbody>
-                </table>
-            </div>
-        </div>
-    </div>
+    </main>
 
     <!-- Scripts -->
     <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
@@ -123,7 +217,31 @@
 
         let allData = [];
         let table;
+        
+        // Chart instances
+        let demCharts = {};
 
+        // -------------------------------------------------------------
+        // UI Tabs & State Management
+        // -------------------------------------------------------------
+        function switchTab(tabId) {
+            document.querySelectorAll('.sidebar-link').forEach(el => {
+                el.classList.remove('active', 'border-emerald-500', 'text-emerald-500');
+                if(el.id === 'nav-' + tabId) el.classList.add('active', 'border-emerald-500', 'text-emerald-500');
+            });
+            
+            document.getElementById('view-senarai').classList.add('hidden');
+            document.getElementById('view-analitik').classList.add('hidden');
+            document.getElementById('view-' + tabId).classList.remove('hidden');
+            
+            if(tabId === 'analitik') {
+                renderDemographyView();
+            }
+        }
+
+        // -------------------------------------------------------------
+        // Data Loading
+        // -------------------------------------------------------------
         document.addEventListener('DOMContentLoaded', async () => {
             const fetchPromises = sources.map(source => fetchCsv(source));
             
@@ -132,24 +250,31 @@
                 
                 results.forEach(res => {
                     if(res.data) {
-                        // Keep track of current district just in case the row leaves it blank
                         let currentDistrict = res.source.name; 
                         
                         res.data.forEach(row => {
-                            // Check if row has a clinic name in column index 3 (HEALTH CLINIC) and number in col 1
                             if (row.length > 5 && row[1] && !isNaN(parseInt(row[1])) && row[3] && row[3].trim() !== '') {
-                                
-                                // row[2] usually contains DISTRICT on the first row, but might be empty for subsequent ones
                                 const district = row[2] ? row[2].trim() : currentDistrict;
                                 if(row[2]) currentDistrict = district;
 
-                                const kkName = row[3].trim();
-                                
-                                // Push to combined array
                                 allData.push({
-                                    daerah: res.source.name, // Force use the source name to be safe
-                                    kk: kkName,
+                                    daerah: res.source.name, 
+                                    kk: row[3].trim(),
                                     pendaftaran: parseInt(row[4] || 0),
+                                    
+                                    // Demographics
+                                    male: parseInt(row[5] || 0),
+                                    female: parseInt(row[6] || 0),
+                                    malay: parseInt(row[7] || 0),
+                                    chinese: parseInt(row[8] || 0),
+                                    indian: parseInt(row[9] || 0),
+                                    sabah: parseInt(row[10] || 0),
+                                    sarawak: parseInt(row[11] || 0),
+                                    asli: parseInt(row[12] || 0),
+                                    others: parseInt(row[13] || 0),
+                                    nonMy: parseInt(row[14] || 0),
+
+                                    // Status
                                     kesBaru: parseInt(row[15] || 0),
                                     transferIn: parseInt(row[16] || 0),
                                     aktif: parseInt(row[17] || 0),
@@ -165,40 +290,34 @@
                     }
                 });
 
-                initializeDashboard();
+                initializeSenarai();
+                populateDemographyDropdowns();
                 
             } catch (err) {
                 console.error("Master Error:", err);
                 const badge = document.getElementById('status-badge');
-                badge.className = "text-sm font-medium text-red-600 bg-red-50 px-4 py-2 rounded-full";
-                badge.innerHTML = "Ralat memuat turun data. Sila semak console penyemak imbas.";
+                badge.className = "flex items-center gap-2 mb-2 text-red-500 font-medium";
+                badge.innerHTML = "<i class='fa-solid fa-circle-xmark'></i> Ralat Sambungan";
             }
         });
 
         function fetchCsv(source) {
             return new Promise((resolve) => {
-                Papa.parse(source.url, {
-                    download: true,
-                    header: false,
-                    complete: function(results) {
-                        resolve({ source: source, data: results.data });
-                    },
-                    error: function(err) {
-                        console.error("Error for " + source.name, err);
-                        resolve({ source: source, data: null, error: err });
-                    }
+                Papa.parse(source.url, { download: true, header: false,
+                    complete: function(results) { resolve({ source: source, data: results.data }); },
+                    error: function(err) { resolve({ source: source, data: null, error: err }); }
                 });
             });
         }
 
-        function initializeDashboard() {
-            // Update Status Badge
+        // -------------------------------------------------------------
+        // Senarai Pendaftaran Functions
+        // -------------------------------------------------------------
+        function initializeSenarai() {
             const badge = document.getElementById('status-badge');
-            badge.className = "text-sm font-medium text-emerald-600 bg-emerald-50 px-4 py-2 rounded-full";
-            const now = new Date();
-            badge.innerHTML = "Berjaya dimuat turun (" + now.toLocaleTimeString('ms-MY') + ")";
+            badge.className = "flex items-center gap-2 mb-2 text-emerald-400 font-medium";
+            badge.innerHTML = "<i class='fa-solid fa-circle-check'></i> Talian Aktif";
 
-            // Populate Table
             const tbody = document.getElementById('table-body');
             allData.forEach(d => {
                 const tr = document.createElement('tr');
@@ -219,143 +338,312 @@
                 tbody.appendChild(tr);
             });
 
-            // Init DataTables
             table = $('#klinik-table').DataTable({
-                pageLength: 25,
-                language: {
-                    search: "Cari:",
-                    lengthMenu: "Papar _MENU_ rekod",
-                    info: "Memaparkan _START_ hingga _END_ dari _TOTAL_ klinik",
-                    paginate: {
-                        next: "Seterusnya",
-                        previous: "Sebelumnya"
-                    }
-                }
+                pageLength: 15,
+                language: { search: "Cari:", lengthMenu: "_MENU_ baris", info: "Papar _START_ - _END_ dari _TOTAL_" }
             });
 
-            populateFilters();
-            updateSummaryCards(allData);
-
-            // Listen to table filter changes
-            table.on('search.dt', function() {
-                const filteredData = extractDataFromDT();
-                updateSummaryCards(filteredData);
+            // Filters
+            const selectD = document.getElementById('filter-daerah');
+            const selectKK = document.getElementById('filter-kk');
+            
+            [...new Set(allData.map(d => d.daerah))].sort().forEach(daerah => {
+                selectD.append(new Option(daerah, daerah));
             });
-        }
-
-        function populateFilters() {
-            const daerahSet = new Set();
-            const kkSet = new Set();
-
-            allData.forEach(d => {
-                daerahSet.add(d.daerah);
-                kkSet.add(d.kk);
+            [...new Set(allData.map(d => d.kk))].sort().forEach(kk => {
+                selectKK.append(new Option(kk, kk));
             });
 
-            const selDaerah = document.getElementById('filter-daerah');
-            Array.from(daerahSet).sort().forEach(daerah => {
-                const opt = document.createElement('option');
-                opt.value = opt.textContent = daerah;
-                selDaerah.appendChild(opt);
-            });
-
-            const selKK = document.getElementById('filter-kk');
-            Array.from(kkSet).sort().forEach(kk => {
-                const opt = document.createElement('option');
-                opt.value = opt.textContent = kk;
-                selKK.appendChild(opt);
-            });
-
-            // Filter Event Listeners
-            selDaerah.addEventListener('change', function() {
+            selectD.addEventListener('change', function() {
                 table.column(0).search(this.value).draw();
-                // Filter KK dropdown based on selected Daerah
-                updateKKDropdown(this.value);
+                // cascaded KK logic
+                selectKK.innerHTML = '<option value="">Semua Klinik</option>';
+                const filteredKKs = [...new Set(allData.filter(d => this.value==="" || d.daerah === this.value).map(d => d.kk))].sort();
+                filteredKKs.forEach(kk => selectKK.append(new Option(kk, kk)));
             });
-
-            selKK.addEventListener('change', function() {
+            selectKK.addEventListener('change', function() {
                 table.column(1).search(this.value).draw();
             });
-        }
 
-        function updateKKDropdown(selectedDaerah) {
-            const selKK = document.getElementById('filter-kk');
-            // Reset KK options
-            selKK.innerHTML = '<option value="">Semua Klinik</option>';
-            
-            const kkSet = new Set();
-            allData.forEach(d => {
-                if(selectedDaerah === "" || d.daerah === selectedDaerah) {
-                    kkSet.add(d.kk);
+            updateSummaryCards(allData);
+            table.on('search.dt', function() {
+                const rows = table.rows({ filter: 'applied' }).data();
+                let acc = { pdaftar:0, aktif:0, kesBaru:0, tr:0, diag:0 };
+                for(let i=0; i<rows.length; i++) {
+                    acc.pdaftar += parseInt(rows[i][2].replace(/,/g, ''));
+                    acc.kesBaru += parseInt(rows[i][3].replace(/,/g, ''));
+                    acc.tr += parseInt(rows[i][4].replace(/,/g, ''));
+                    acc.aktif += parseInt(rows[i][5].replace(/,/g, ''));
+                    acc.diag += parseInt(rows[i][10].replace(/,/g, ''));
                 }
-            });
-
-            Array.from(kkSet).sort().forEach(kk => {
-                const opt = document.createElement('option');
-                opt.value = opt.textContent = kk;
-                selKK.appendChild(opt);
+                updateSummaryCards([{ pendaftaran: acc.pdaftar, aktif: acc.aktif, kesBaru: acc.kesBaru, transferIn: acc.tr, diagnosaSemasa: acc.diag }]);
             });
         }
 
         function resetFilters() {
             document.getElementById('filter-daerah').value = "";
-            updateKKDropdown("");
+            document.getElementById('filter-daerah').dispatchEvent(new Event('change'));
             document.getElementById('filter-kk').value = "";
             table.search('').columns().search('').draw();
         }
 
-        function extractDataFromDT() {
-            // Get currently filtered rows data
-            const filteredRows = table.rows({ filter: 'applied' }).data();
-            let summaryData = [];
-            
-            for(let i=0; i<filteredRows.length; i++) {
-                const r = filteredRows[i];
-                summaryData.push({
-                    pendaftaran: parseInt(r[2].replace(/,/g, '')),
-                    aktif: parseInt(r[5].replace(/,/g, '')),
-                    kesBaru: parseInt(r[3].replace(/,/g, '')),
-                    transferIn: parseInt(r[4].replace(/,/g, '')),
-                    diagnosaSemasa: parseInt(r[10].replace(/,/g, ''))
-                });
-            }
-            return summaryData;
+        function updateSummaryCards(dList) {
+            let tDaftar = 0, tAktif = 0, tBaru = 0, tTR = 0, tDiag = 0;
+            dList.forEach(d => {
+                tDaftar += d.pendaftaran||0; tAktif += d.aktif||0; tBaru += d.kesBaru||0;
+                tTR += d.transferIn||0; tDiag += d.diagnosaSemasa||0;
+            });
+            document.getElementById('summary-cards').innerHTML = `
+                <div class="bg-white border-l-4 border-indigo-500 rounded-lg shadow-sm p-4">
+                    <div class="text-slate-500 text-xs font-semibold mb-1">JUMLAH PENDAFTARAN</div>
+                    <div class="text-2xl font-bold text-slate-800">${tDaftar.toLocaleString()}</div>
+                </div>
+                <div class="bg-white border-l-4 border-emerald-500 rounded-lg shadow-sm p-4">
+                    <div class="text-slate-500 text-xs font-semibold mb-1">KES AKTIF</div>
+                    <div class="text-2xl font-bold text-slate-800">${tAktif.toLocaleString()}</div>
+                </div>
+                <div class="bg-white border-l-4 border-blue-500 rounded-lg shadow-sm p-4">
+                    <div class="text-slate-500 text-xs font-semibold mb-1">DIAGNOSA TAHUN SEMASA</div>
+                    <div class="text-2xl font-bold text-slate-800">${tDiag.toLocaleString()}</div>
+                </div>
+                <div class="bg-white border-l-4 border-slate-400 rounded-lg shadow-sm p-4">
+                    <div class="text-slate-500 text-xs font-semibold mb-1">KES BARU (TERKUMPUL)</div>
+                    <div class="text-2xl font-bold text-slate-800">${tBaru.toLocaleString()}</div>
+                </div>
+                <div class="bg-white border-l-4 border-teal-500 rounded-lg shadow-sm p-4">
+                    <div class="text-slate-500 text-xs font-semibold mb-1">TRANSFER IN</div>
+                    <div class="text-2xl font-bold text-slate-800">${tTR.toLocaleString()}</div>
+                </div>`;
         }
 
-        function updateSummaryCards(dataList) {
-            let totalDaftar = 0, totalAktif = 0, totalBaru = 0, totalTransferIn = 0, totalDiagSemasa = 0;
+
+        // -------------------------------------------------------------
+        // Analitik Demografi Functions
+        // -------------------------------------------------------------
+        function populateDemographyDropdowns() {
+            const selectD = document.getElementById('demo-daerah-select');
             
-            dataList.forEach(d => {
-                totalDaftar += d.pendaftaran || 0;
-                totalAktif += d.aktif || 0;
-                totalBaru += d.kesBaru || 0;
-                totalTransferIn += d.transferIn || 0;
-                totalDiagSemasa += d.diagnosaSemasa || 0;
+            [...new Set(allData.map(d => d.daerah))].sort().forEach(daerah => {
+                selectD.append(new Option(daerah, daerah));
             });
 
-            const cardsDiv = document.getElementById('summary-cards');
-            cardsDiv.innerHTML = `
-                <div class="bg-indigo-50 border border-indigo-100 rounded-xl p-4 flex flex-col justify-center">
-                    <div class="text-indigo-600 text-sm font-semibold mb-1">Jumlah Pendaftaran</div>
-                    <div class="text-2xl font-bold text-indigo-900">${totalDaftar.toLocaleString()}</div>
+            selectD.addEventListener('change', function() {
+                const kkContainer = document.getElementById('kk-checkbox-container');
+                const kkList = document.getElementById('kk-checkbox-list');
+                
+                if(this.value === "ALL") {
+                    kkContainer.classList.add('hidden');
+                    renderDemographyView();
+                } else {
+                    kkContainer.classList.remove('hidden');
+                    // Build checkboxes
+                    kkList.innerHTML = '';
+                    const kks = [...new Set(allData.filter(d => d.daerah === this.value).map(d => d.kk))].sort();
+                    kks.forEach(kk => {
+                        const lbl = document.createElement('label');
+                        lbl.className = "flex items-center gap-2 text-slate-700 cursor-pointer bg-white px-3 py-2 border border-slate-200 rounded text-xs hover:bg-slate-100";
+                        lbl.innerHTML = `<input type="checkbox" value="${kk}" class="demo-kk-cb accent-indigo-600" checked onchange="renderDemographyView()"> ${kk}`;
+                        kkList.appendChild(lbl);
+                    });
+                    document.getElementById('demo-select-all').checked = true;
+                    renderDemographyView();
+                }
+            });
+        }
+
+        function toggleAllKKs(masterCb) {
+            document.querySelectorAll('.demo-kk-cb').forEach(cb => {
+                cb.checked = masterCb.checked;
+            });
+            renderDemographyView();
+        }
+
+        function renderDemographyView() {
+            const out = document.getElementById('demo-output-container');
+            const daerahMode = document.getElementById('demo-daerah-select').value;
+            
+            // Clear existing charts
+            Object.values(demCharts).forEach(c => c.destroy());
+            demCharts = {};
+
+            if(daerahMode === "ALL") {
+                // aggregate by ALL DISTRICTS for comparison
+                const districts = [...new Set(allData.map(d => d.daerah))].sort();
+                let dsData = districts.map(ds => {
+                    let subset = allData.filter(a => a.daerah === ds);
+                    return aggregateDemographics(subset, ds);
+                });
+                renderMultiComparisonChart(dsData, out, "Perbandingan Fasiliti (Kategori Daerah)");
+
+            } else {
+                // Focus on selected KKs in the specific Daerah
+                const cbs = Array.from(document.querySelectorAll('.demo-kk-cb:checked')).map(cb => cb.value);
+                
+                if (cbs.length === 0) {
+                    out.innerHTML = `<div class="p-10 text-center text-slate-400 bg-white border border-slate-200 border-dashed rounded-xl"><i class="fa-solid fa-table-cells-large text-4xl mb-3"></i><br>Sila pilih sekurang-kurangnya satu fasiliti.</div>`;
+                    return;
+                }
+
+                if (cbs.length === 1) {
+                    // Scorecard Mode for SINGLE Facility
+                    let subset = allData.filter(a => a.kk === cbs[0]);
+                    let agg = aggregateDemographics(subset, cbs[0]);
+                    renderSingleFacilityScorecard(agg, out);
+                } else {
+                    // Chart Mode for Multi-Facility
+                    let kkDataSets = cbs.map(kkName => {
+                        let subset = allData.filter(a => a.kk === kkName);
+                        return aggregateDemographics(subset, kkName);
+                    });
+                    renderMultiComparisonChart(kkDataSets, out, `Perbandingan ${cbs.length} Klinik di Daerah ${daerahMode}`);
+                }
+            }
+        }
+
+        function aggregateDemographics(dataArr, label) {
+            let res = { name: label, male:0, female:0, malay:0, chinese:0, indian:0, sabah:0, sarawak:0, asli:0, others:0, nonMy:0 };
+            dataArr.forEach(d => {
+                res.male+=d.male; res.female+=d.female;
+                res.malay+=d.malay; res.chinese+=d.chinese; res.indian+=d.indian;
+                res.sabah+=d.sabah; res.sarawak+=d.sarawak; res.asli+=d.asli;
+                res.others+=d.others; res.nonMy+=d.nonMy;
+            });
+            res.totalGen = res.male + res.female;
+            res.totalEth = res.malay+res.chinese+res.indian+res.sabah+res.sarawak+res.asli+res.others+res.nonMy;
+            return res;
+        }
+
+        function renderSingleFacilityScorecard(data, container) {
+            // Find major ethnicity
+            let eths = [
+                {k:'Melayu',v:data.malay}, {k:'Cina',v:data.chinese}, {k:'India',v:data.indian}, 
+                {k:'Bumiputra Sabah',v:data.sabah}, {k:'Bumiputra Sarawak',v:data.sarawak}, 
+                {k:'Orang Asli',v:data.asli}, {k:'Lain-lain',v:data.others}, {k:'Bukan Warganegara',v:data.nonMy}
+            ].sort((a,b)=>b.v - a.v);
+            
+            container.innerHTML = `
+                <div class="mb-4">
+                    <h3 class="text-2xl font-bold border-l-4 border-indigo-600 pl-3">${data.name} <span class="text-sm font-normal text-slate-500 ml-2">Profil Tunggal</span></h3>
                 </div>
-                <div class="bg-emerald-50 border border-emerald-100 rounded-xl p-4 flex flex-col justify-center">
-                    <div class="text-emerald-600 text-sm font-semibold mb-1">Kes Aktif</div>
-                    <div class="text-2xl font-bold text-emerald-900">${totalAktif.toLocaleString()}</div>
-                </div>
-                <div class="bg-blue-50 border border-blue-100 rounded-xl p-4 flex flex-col justify-center">
-                    <div class="text-blue-600 text-sm font-semibold mb-1">Diagnosa Tahun Semasa</div>
-                    <div class="text-2xl font-bold text-blue-900">${totalDiagSemasa.toLocaleString()}</div>
-                </div>
-                <div class="bg-slate-50 border border-slate-200 rounded-xl p-4 flex flex-col justify-center">
-                    <div class="text-slate-600 text-sm font-semibold mb-1">Kes Baru (Terkumpul)</div>
-                    <div class="text-2xl font-bold text-slate-900">${totalBaru.toLocaleString()}</div>
-                </div>
-                <div class="bg-teal-50 border border-teal-100 rounded-xl p-4 flex flex-col justify-center">
-                    <div class="text-teal-600 text-sm font-semibold mb-1">Kes Transfer In</div>
-                    <div class="text-2xl font-bold text-teal-900">${totalTransferIn.toLocaleString()}</div>
+                
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <!-- Gender Cards -->
+                    <div class="bg-white p-6 rounded-xl shadow-sm border border-slate-200">
+                        <h4 class="text-slate-500 font-semibold mb-4 uppercase text-xs tracking-widest"><i class="fa-solid fa-venus-mars mr-2"></i>Pecahan Jantina</h4>
+                        <div class="flex gap-4">
+                            <div class="flex-1 bg-blue-50 rounded-lg p-4 flex flex-col items-center border border-blue-100">
+                                <i class="fa-solid fa-mars text-4xl text-blue-400 mb-2"></i>
+                                <span class="text-3xl font-bold text-blue-900">${data.male.toLocaleString()}</span>
+                                <span class="text-sm text-blue-600">Lelaki (${((data.male/(data.totalGen||1))*100).toFixed(1)}%)</span>
+                            </div>
+                            <div class="flex-1 bg-pink-50 rounded-lg p-4 flex flex-col items-center border border-pink-100">
+                                <i class="fa-solid fa-venus text-4xl text-pink-400 mb-2"></i>
+                                <span class="text-3xl font-bold text-pink-900">${data.female.toLocaleString()}</span>
+                                <span class="text-sm text-pink-600">Perempuan (${((data.female/(data.totalGen||1))*100).toFixed(1)}%)</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Ethic Cards -->
+                    <div class="bg-white p-6 rounded-xl shadow-sm border border-slate-200">
+                        <h4 class="text-slate-500 font-semibold mb-4 uppercase text-xs tracking-widest"><i class="fa-solid fa-users mr-2"></i>Taburan Etnik Utama</h4>
+                        <div class="space-y-3">
+                            ${eths.slice(0,4).map((e, idx) => `
+                                <div class="flex justify-between items-center bg-slate-50 p-2 px-4 rounded ${idx===0 ? 'border-l-4 border-emerald-500 bg-emerald-50':''}">
+                                    <span class="font-medium text-slate-700">${e.k}</span>
+                                    <span class="font-bold text-slate-900">${e.v.toLocaleString()} <span class="text-xs text-slate-400 ml-2">${((e.v/(data.totalEth||1))*100).toFixed(1)}%</span></span>
+                                </div>
+                            `).join('')}
+                        </div>
+                    </div>
                 </div>
             `;
+        }
+
+        function renderMultiComparisonChart(dataArr, container, titleLabel) {
+            container.innerHTML = `
+                <div class="mb-4">
+                    <h3 class="text-lg font-bold text-slate-700 mb-4"><i class="fa-solid fa-chart-simple text-indigo-500 mr-2"></i>${titleLabel}</h3>
+                </div>
+                
+                <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
+                    <div class="bg-white p-4 rounded-xl shadow-sm border border-slate-200">
+                        <canvas id="chart-gender"></canvas>
+                    </div>
+                    <div class="bg-white p-4 rounded-xl shadow-sm border border-slate-200">
+                        <canvas id="chart-ethnicity-pie"></canvas>
+                    </div>
+                </div>
+                <div class="bg-white p-4 rounded-xl shadow-sm border border-slate-200">
+                    <canvas id="chart-ethnicity-bar" height="100"></canvas>
+                </div>
+            `;
+
+            const labels = dataArr.map(d => d.name);
+            
+            // 1. Gender Bar Chart (Stacked side by side)
+            const ctxGen = document.getElementById('chart-gender').getContext('2d');
+            demCharts.gen = new Chart(ctxGen, {
+                type: 'bar',
+                data: {
+                    labels: labels,
+                    datasets: [
+                        { label: 'Lelaki', data: dataArr.map(d=>d.male), backgroundColor: '#3b82f6', borderRadius: 4 },
+                        { label: 'Perempuan', data: dataArr.map(d=>d.female), backgroundColor: '#ec4899', borderRadius: 4 }
+                    ]
+                },
+                options: {
+                    responsive: true,
+                    plugins: { title: { display: true, text: 'Perbandingan Jantina (Fasiliti/Daerah)', padding: 20 } },
+                    scales: { y: { beginAtZero: true } }
+                }
+            });
+
+            // 2. Ethnicity Stacked Bar
+            const ctxEthBar = document.getElementById('chart-ethnicity-bar').getContext('2d');
+            demCharts.ethBar = new Chart(ctxEthBar, {
+                type: 'bar',
+                data: {
+                    labels: labels,
+                    datasets: [
+                        { label: 'Melayu', data: dataArr.map(d=>d.malay), backgroundColor: '#10b981' },
+                        { label: 'Cina', data: dataArr.map(d=>d.chinese), backgroundColor: '#ef4444' },
+                        { label: 'India', data: dataArr.map(d=>d.indian), backgroundColor: '#f59e0b' },
+                        { label: 'Lain-lain / Asli', data: dataArr.map(d=>d.others + d.sabah + d.sarawak + d.asli), backgroundColor: '#8b5cf6' },
+                        { label: 'Bukan Warga', data: dataArr.map(d=>d.nonMy), backgroundColor: '#64748b' }
+                    ]
+                },
+                options: {
+                    responsive: true,
+                    plugins: { title: { display: true, text: 'Perbandingan Demografi Etnik Mengikut Lokasi', padding: 20 } },
+                    scales: { x: { stacked: true }, y: { stacked: true, beginAtZero: true } }
+                }
+            });
+
+            // 3. Ethnicity Agreggate Pie
+            let aggEths = [0,0,0,0,0];
+            dataArr.forEach(d => {
+                aggEths[0]+=d.malay; aggEths[1]+=d.chinese; aggEths[2]+=d.indian;
+                aggEths[3]+=(d.others+d.sabah+d.sarawak+d.asli); aggEths[4]+=d.nonMy;
+            });
+
+            const ctxEthPie = document.getElementById('chart-ethnicity-pie').getContext('2d');
+            demCharts.ethPie = new Chart(ctxEthPie, {
+                type: 'doughnut',
+                data: {
+                    labels: ['Melayu', 'Cina', 'India', 'Lain-lain / Bumiputera', 'Bukan Warga'],
+                    datasets: [{
+                        data: aggEths,
+                        backgroundColor: ['#10b981', '#ef4444', '#f59e0b', '#8b5cf6', '#64748b'],
+                        borderWidth: 0
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    plugins: { title: { display: true, text: 'Perkadaran Etnik Keseluruhan (Subset Pilihan)', padding: 20 } },
+                    cutout: '60%'
+                }
+            });
         }
     </script>
 </body>
