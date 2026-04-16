@@ -3,125 +3,356 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Pangkalan Data Pendaftaran Hypertensi JKN Kedah</title>
+    <title>Dashboard Pendaftaran Hypertensi Klinik Kesihatan JKN Kedah</title>
+    
+    <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
+    
+    <!-- DataTables CSS for Tailwind -->
+    <link rel="stylesheet" type="text/css" href="https://cdn.datatables.net/v/dt/dt-1.13.2/datatables.min.css"/>
+    
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
         body { font-family: 'Inter', sans-serif; background-color: #f8fafc; }
-        .glass-panel {
-            background: rgba(255, 255, 255, 0.9);
-            backdrop-filter: blur(10px);
-            border: 1px solid rgba(255, 255, 255, 0.2);
-            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+        
+        /* Custom tweaks for datatables integrating with tailwind */
+        .dataTables_wrapper .dataTables_length select {
+            border: 1px solid #e2e8f0;
+            border-radius: 0.375rem;
+            padding: 0.25rem 0.5rem;
+        }
+        .dataTables_wrapper .dataTables_filter input {
+            border: 1px solid #e2e8f0;
+            border-radius: 0.375rem;
+            padding: 0.25rem 0.5rem;
+            margin-left: 0.5rem;
         }
     </style>
 </head>
-<body class="text-slate-800 antialiased p-6">
+<body class="text-slate-800 antialiased p-6 min-h-screen">
 
-    <div class="max-w-7xl mx-auto">
-        <header class="mb-8 flex items-center justify-between">
+    <div class="max-w-screen-2xl mx-auto">
+        <header class="mb-8 flex flex-col md:flex-row md:items-center justify-between gap-4">
             <div>
-                <h1 class="text-3xl font-bold tracking-tight text-slate-900">Pangkalan Data Registri Hypertensi</h1>
-                <p class="text-slate-500 mt-1">Data ditarik secara automatik dari Google Sheets (Peringkat Daerah)</p>
+                <h1 class="text-3xl font-bold tracking-tight text-slate-900">Dashboard Registri Hypertensi (Peringkat Klinik)</h1>
+                <p class="text-slate-500 mt-1">Data digabungkan secara automatik dari Google Sheets berbilang daerah.</p>
             </div>
-            <div id="last-updated" class="text-sm font-medium text-emerald-600 bg-emerald-50 px-3 py-1 rounded-full">
-                Sedang memuat data...
+            <div id="status-badge" class="text-sm font-medium text-amber-600 bg-amber-50 px-4 py-2 rounded-full flex items-center shadow-sm">
+                <svg class="animate-spin -ml-1 mr-2 h-4 w-4 text-amber-600" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                    <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                    <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                </svg>
+                Memuat turun & memproses data...
             </div>
         </header>
 
-        <div class="glass-panel rounded-2xl overflow-hidden">
-            <div class="overflow-x-auto">
-                <table class="w-full text-sm text-left">
-                    <thead class="bg-slate-50 text-slate-600 border-b border-slate-200">
-                        <tr>
-                            <th class="px-6 py-4 font-semibold text-left">No.</th>
-                            <th class="px-6 py-4 font-semibold text-left">Daerah</th>
-                            <th class="px-6 py-4 font-semibold text-right">Jumlah Pendaftaran</th>
-                            <th class="px-6 py-4 font-semibold text-right">Kes Baru</th>
-                            <th class="px-6 py-4 font-semibold text-right">Kes Aktif</th>
-                            <th class="px-6 py-4 font-semibold text-right">Diagnosa Tahun Semasa</th>
+        <!-- Filters -->
+        <div class="bg-white p-4 rounded-xl shadow-sm border border-slate-200 mb-6 grid grid-cols-1 md:grid-cols-3 gap-4">
+            <div>
+                <label class="block text-sm font-medium text-slate-700 mb-1">Tapis Daerah</label>
+                <select id="filter-daerah" class="w-full border-slate-300 rounded-lg shadow-sm p-2 border focus:border-emerald-500 focus:ring-emerald-500">
+                    <option value="">Semua Daerah</option>
+                </select>
+            </div>
+            <div>
+                <label class="block text-sm font-medium text-slate-700 mb-1">Tapis Klinik Kesihatan</label>
+                <select id="filter-kk" class="w-full border-slate-300 rounded-lg shadow-sm p-2 border focus:border-emerald-500 focus:ring-emerald-500">
+                    <option value="">Semua Klinik</option>
+                </select>
+            </div>
+            <div class="flex items-end">
+                <button onclick="resetFilters()" class="px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-lg transition-colors font-medium">Batal Tapis</button>
+            </div>
+        </div>
+
+        <!-- Metric Cards -->
+        <div class="grid grid-cols-2 md:grid-cols-5 gap-4 mb-6" id="summary-cards">
+            <!-- Populated via JS -->
+        </div>
+
+        <!-- Table -->
+        <div class="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
+            <div class="p-4 border-b border-slate-200 bg-slate-50">
+                <h2 class="font-semibold text-slate-800">Senarai Terperinci</h2>
+            </div>
+            <div class="p-4 overflow-x-auto">
+                <table id="klinik-table" class="stripe hover w-full text-sm">
+                    <thead>
+                        <tr class="bg-slate-100 text-slate-600">
+                            <th class="py-3 px-4 text-left">Daerah</th>
+                            <th class="py-3 px-4 text-left">Klinik Kesihatan</th>
+                            <th class="py-3 px-4 text-right">Pendaftaran</th>
+                            <th class="py-3 px-4 text-right">Kes Baru</th>
+                            <th class="py-3 px-4 text-right">Transfer In</th>
+                            <th class="py-3 px-4 text-right text-emerald-600">Aktif</th>
+                            <th class="py-3 px-4 text-right">Transfer Out</th>
+                            <th class="py-3 px-4 text-right">DM</th>
+                            <th class="py-3 px-4 text-right text-red-500">Mati</th>
+                            <th class="py-3 px-4 text-right text-orange-500">LFU</th>
+                            <th class="py-3 px-4 text-right text-blue-600">Diag Tahun Semasa</th>
                         </tr>
                     </thead>
-                    <tbody id="data-table-body" class="divide-y divide-slate-100">
-                        <tr>
-                            <td colspan="6" class="px-6 py-8 text-center text-slate-400">
-                                <div class="animate-pulse flex flex-col items-center">
-                                    <div class="h-4 w-48 bg-slate-200 rounded mb-2"></div>
-                                    <div class="text-xs">Mengambil data dari Google Sheets...</div>
-                                </div>
-                            </td>
-                        </tr>
+                    <tbody id="table-body">
+                        <!-- Filled by JS -->
                     </tbody>
                 </table>
             </div>
         </div>
     </div>
 
-    <!-- PapaParse for easy CSV parsing -->
+    <!-- Scripts -->
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script type="text/javascript" src="https://cdn.datatables.net/v/dt/dt-1.13.2/datatables.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.4.1/papaparse.min.js"></script>
-    <script>
-        // Google Sheets CSV Export URL based on the provided link
-        const sheetUrl = "https://docs.google.com/spreadsheets/d/1HVtpvoPzSO2YbrHBwyl9xIOQTxtgXuEt-mU2Nw7qk8A/export?format=csv&gid=1528753332";
 
-        document.addEventListener('DOMContentLoaded', () => {
-            fetchData();
+    <script>
+        const sources = [
+            { name: "BALING", url: "https://docs.google.com/spreadsheets/d/18rBLnHafkqfUEtCihM1JQt9JQTu_06QLghNaFVXdy2g/export?format=csv&gid=216618346" },
+            { name: "BANDAR BAHARU", url: "https://docs.google.com/spreadsheets/d/16DgO5E37lB69nEEUBLOMG5I6Lz7ME26LC1JNcQZGsjE/export?format=csv" },
+            { name: "KOTA SETAR", url: "https://docs.google.com/spreadsheets/d/1VFjwLDdCsIzp2QT1YkAEWB1C06N0qkG-b7h8wfVvUIA/export?format=csv&gid=216618346" },
+            { name: "KUALA MUDA", url: "https://docs.google.com/spreadsheets/d/19jpgy23T36fcYjMwM9TwV--xh00WsTqqU-hW0qNazvE/export?format=csv" },
+            { name: "KUBANG PASU", url: "https://docs.google.com/spreadsheets/d/13UCSdEH8ETB9GDhmcRtVjZPOJYbTJ9jveN0E-VO2zk0/export?format=csv&gid=216618346" },
+            { name: "KULIM", url: "https://docs.google.com/spreadsheets/d/14jOShQqCWeEf5Vt4eKnSrLujXbDQJXxCUsjJey_xXxk/export?format=csv&gid=216618346" },
+            { name: "LANGKAWI", url: "https://docs.google.com/spreadsheets/d/1tkzZnBi0ezsiKyUp1abK5PLc6tv3VTQscesSJg3sr5U/export?format=csv&gid=216618346" },
+            { name: "PADANG TERAP", url: "https://docs.google.com/spreadsheets/d/1MojYZFPaAVheIRUcQn8QCedK7N5-NbRXIvtKNDnrEmA/export?format=csv" },
+            { name: "PENDANG", url: "https://docs.google.com/spreadsheets/d/1YzHqa6VxFvAbTqqJDEoYgVvMY5bao101CMveyjS0iag/export?format=csv&gid=216618346" },
+            { name: "SIK", url: "https://docs.google.com/spreadsheets/d/1d4MlCM-xUPbynxa_PKM9gddb31Yxq8htTO15D76te2s/export?format=csv&gid=216618346" },
+            { name: "YAN", url: "https://docs.google.com/spreadsheets/d/1fb8l1VhbJXyVrLTTcA08Nnfj-i5XK5RL6D3Fblb0XvE/export?format=csv" }
+        ];
+
+        let allData = [];
+        let table;
+
+        document.addEventListener('DOMContentLoaded', async () => {
+            const fetchPromises = sources.map(source => fetchCsv(source));
+            
+            try {
+                const results = await Promise.all(fetchPromises);
+                
+                results.forEach(res => {
+                    if(res.data) {
+                        // Keep track of current district just in case the row leaves it blank
+                        let currentDistrict = res.source.name; 
+                        
+                        res.data.forEach(row => {
+                            // Check if row has a clinic name in column index 3 (HEALTH CLINIC) and number in col 1
+                            if (row.length > 5 && row[1] && !isNaN(parseInt(row[1])) && row[3] && row[3].trim() !== '') {
+                                
+                                // row[2] usually contains DISTRICT on the first row, but might be empty for subsequent ones
+                                const district = row[2] ? row[2].trim() : currentDistrict;
+                                if(row[2]) currentDistrict = district;
+
+                                const kkName = row[3].trim();
+                                
+                                // Push to combined array
+                                allData.push({
+                                    daerah: res.source.name, // Force use the source name to be safe
+                                    kk: kkName,
+                                    pendaftaran: parseInt(row[4] || 0),
+                                    kesBaru: parseInt(row[15] || 0),
+                                    transferIn: parseInt(row[16] || 0),
+                                    aktif: parseInt(row[17] || 0),
+                                    transferOut: parseInt(row[18] || 0),
+                                    dm: parseInt(row[19] || 0),
+                                    mati: parseInt(row[20] || 0),
+                                    lfu: parseInt(row[21] || 0),
+                                    diagnosaSemasa: parseInt(row[22] || 0)
+                                });
+                            }
+                        });
+                    }
+                });
+
+                initializeDashboard();
+                
+            } catch (err) {
+                console.error("Master Error:", err);
+                const badge = document.getElementById('status-badge');
+                badge.className = "text-sm font-medium text-red-600 bg-red-50 px-4 py-2 rounded-full";
+                badge.innerHTML = "Ralat memuat turun data. Sila semak console penyemak imbas.";
+            }
         });
 
-        function fetchData() {
-            Papa.parse(sheetUrl, {
-                download: true,
-                header: false,
-                complete: function(results) {
-                    processData(results.data);
-                },
-                error: function(err) {
-                    console.error("Error fetching data:", err);
-                    document.getElementById('data-table-body').innerHTML = `
-                        <tr><td colspan="6" class="px-6 py-8 text-center text-red-500">Ralat semasa memuat turun data. Sila pastikan Sheet adalah 'Public'.</td></tr>
-                    `;
-                }
+        function fetchCsv(source) {
+            return new Promise((resolve) => {
+                Papa.parse(source.url, {
+                    download: true,
+                    header: false,
+                    complete: function(results) {
+                        resolve({ source: source, data: results.data });
+                    },
+                    error: function(err) {
+                        console.error("Error for " + source.name, err);
+                        resolve({ source: source, data: null, error: err });
+                    }
+                });
             });
         }
 
-        function processData(data) {
-            const tbody = document.getElementById('data-table-body');
-            tbody.innerHTML = ''; // Clear loading state
-            
-            // In the provided CSV, district data starts around row 22 (index 21)
-            let hasData = false;
-            
-            data.forEach(row => {
-                // Check if row looks like a district row (has number in col 1, district name in col 3)
-                if (row.length > 5 && row[1] && !isNaN(parseInt(row[1])) && row[3]) {
-                    hasData = true;
-                    
-                    const no = row[1];
-                    const daerah = row[3];
-                    const jumlahDaftar = parseInt(row[4] || 0).toLocaleString();
-                    const kesBaru = parseInt(row[15] || 0).toLocaleString();
-                    const kesAktif = parseInt(row[17] || 0).toLocaleString();
-                    const diagTahunSemasa = parseInt(row[22] || 0).toLocaleString();
+        function initializeDashboard() {
+            // Update Status Badge
+            const badge = document.getElementById('status-badge');
+            badge.className = "text-sm font-medium text-emerald-600 bg-emerald-50 px-4 py-2 rounded-full";
+            const now = new Date();
+            badge.innerHTML = "Berjaya dimuat turun (" + now.toLocaleTimeString('ms-MY') + ")";
 
-                    const tr = document.createElement('tr');
-                    tr.className = "hover:bg-slate-50 transition-colors";
-                    tr.innerHTML = `
-                        <td class="px-6 py-4 font-medium text-slate-500">${no}</td>
-                        <td class="px-6 py-4 font-semibold text-slate-800">${daerah}</td>
-                        <td class="px-6 py-4 text-right font-medium text-slate-700">${jumlahDaftar}</td>
-                        <td class="px-6 py-4 text-right text-slate-600">${kesBaru}</td>
-                        <td class="px-6 py-4 text-right text-emerald-600 font-medium">${kesAktif}</td>
-                        <td class="px-6 py-4 text-right text-blue-600 font-medium">${diagTahunSemasa}</td>
-                    `;
-                    tbody.appendChild(tr);
+            // Populate Table
+            const tbody = document.getElementById('table-body');
+            allData.forEach(d => {
+                const tr = document.createElement('tr');
+                tr.innerHTML = `
+                    <td class="font-medium text-slate-800">${d.daerah}</td>
+                    <td class="font-medium text-slate-700">${d.kk}</td>
+                    <td class="text-right">${d.pendaftaran.toLocaleString()}</td>
+                    <td class="text-right">${d.kesBaru.toLocaleString()}</td>
+                    <td class="text-right">${d.transferIn.toLocaleString()}</td>
+                    <td class="text-right font-medium text-emerald-600">${d.aktif.toLocaleString()}</td>
+                    <td class="text-right">${d.transferOut.toLocaleString()}</td>
+                    <td class="text-right">${d.dm.toLocaleString()}</td>
+                    <td class="text-right text-red-500">${d.mati.toLocaleString()}</td>
+                    <td class="text-right text-orange-500">${d.lfu.toLocaleString()}</td>
+                    <td class="text-right font-medium text-blue-600">${d.diagnosaSemasa.toLocaleString()}</td>
+                `;
+                tbody.appendChild(tr);
+            });
+
+            // Init DataTables
+            table = $('#klinik-table').DataTable({
+                pageLength: 25,
+                language: {
+                    search: "Cari:",
+                    lengthMenu: "Papar _MENU_ rekod",
+                    info: "Memaparkan _START_ hingga _END_ dari _TOTAL_ klinik",
+                    paginate: {
+                        next: "Seterusnya",
+                        previous: "Sebelumnya"
+                    }
                 }
             });
 
-            if (!hasData) {
-                tbody.innerHTML = `<tr><td colspan="6" class="px-6 py-8 text-center text-slate-500">Tiada data daerah dijumpai dalam helaian ini.</td></tr>`;
-            }
+            populateFilters();
+            updateSummaryCards(allData);
 
-            const now = new Date();
-            document.getElementById('last-updated').textContent = "Data dikemaskini: " + now.toLocaleTimeString('ms-MY');
+            // Listen to table filter changes
+            table.on('search.dt', function() {
+                const filteredData = extractDataFromDT();
+                updateSummaryCards(filteredData);
+            });
+        }
+
+        function populateFilters() {
+            const daerahSet = new Set();
+            const kkSet = new Set();
+
+            allData.forEach(d => {
+                daerahSet.add(d.daerah);
+                kkSet.add(d.kk);
+            });
+
+            const selDaerah = document.getElementById('filter-daerah');
+            Array.from(daerahSet).sort().forEach(daerah => {
+                const opt = document.createElement('option');
+                opt.value = opt.textContent = daerah;
+                selDaerah.appendChild(opt);
+            });
+
+            const selKK = document.getElementById('filter-kk');
+            Array.from(kkSet).sort().forEach(kk => {
+                const opt = document.createElement('option');
+                opt.value = opt.textContent = kk;
+                selKK.appendChild(opt);
+            });
+
+            // Filter Event Listeners
+            selDaerah.addEventListener('change', function() {
+                table.column(0).search(this.value).draw();
+                // Filter KK dropdown based on selected Daerah
+                updateKKDropdown(this.value);
+            });
+
+            selKK.addEventListener('change', function() {
+                table.column(1).search(this.value).draw();
+            });
+        }
+
+        function updateKKDropdown(selectedDaerah) {
+            const selKK = document.getElementById('filter-kk');
+            // Reset KK options
+            selKK.innerHTML = '<option value="">Semua Klinik</option>';
+            
+            const kkSet = new Set();
+            allData.forEach(d => {
+                if(selectedDaerah === "" || d.daerah === selectedDaerah) {
+                    kkSet.add(d.kk);
+                }
+            });
+
+            Array.from(kkSet).sort().forEach(kk => {
+                const opt = document.createElement('option');
+                opt.value = opt.textContent = kk;
+                selKK.appendChild(opt);
+            });
+        }
+
+        function resetFilters() {
+            document.getElementById('filter-daerah').value = "";
+            updateKKDropdown("");
+            document.getElementById('filter-kk').value = "";
+            table.search('').columns().search('').draw();
+        }
+
+        function extractDataFromDT() {
+            // Get currently filtered rows data
+            const filteredRows = table.rows({ filter: 'applied' }).data();
+            let summaryData = [];
+            
+            for(let i=0; i<filteredRows.length; i++) {
+                const r = filteredRows[i];
+                summaryData.push({
+                    pendaftaran: parseInt(r[2].replace(/,/g, '')),
+                    aktif: parseInt(r[5].replace(/,/g, '')),
+                    kesBaru: parseInt(r[3].replace(/,/g, '')),
+                    mati: parseInt(r[8].replace(/,/g, '')),
+                    diagnosaSemasa: parseInt(r[10].replace(/,/g, ''))
+                });
+            }
+            return summaryData;
+        }
+
+        function updateSummaryCards(dataList) {
+            let totalDaftar = 0, totalAktif = 0, totalBaru = 0, totalMati = 0, totalDiagSemasa = 0;
+            
+            dataList.forEach(d => {
+                totalDaftar += d.pendaftaran || 0;
+                totalAktif += d.aktif || 0;
+                totalBaru += d.kesBaru || 0;
+                totalMati += d.mati || 0;
+                totalDiagSemasa += (d.diagnosaSemasa || d.diagnosaSemasa); // Fix key map
+            });
+
+            const cardsDiv = document.getElementById('summary-cards');
+            cardsDiv.innerHTML = `
+                <div class="bg-indigo-50 border border-indigo-100 rounded-xl p-4 flex flex-col justify-center">
+                    <div class="text-indigo-600 text-sm font-semibold mb-1">Jumlah Pendaftaran</div>
+                    <div class="text-2xl font-bold text-indigo-900">${totalDaftar.toLocaleString()}</div>
+                </div>
+                <div class="bg-emerald-50 border border-emerald-100 rounded-xl p-4 flex flex-col justify-center">
+                    <div class="text-emerald-600 text-sm font-semibold mb-1">Kes Aktif</div>
+                    <div class="text-2xl font-bold text-emerald-900">${totalAktif.toLocaleString()}</div>
+                </div>
+                <div class="bg-blue-50 border border-blue-100 rounded-xl p-4 flex flex-col justify-center">
+                    <div class="text-blue-600 text-sm font-semibold mb-1">Diagnosa Tahun Semasa</div>
+                    <div class="text-2xl font-bold text-blue-900">${totalDiagSemasa.toLocaleString()}</div>
+                </div>
+                <div class="bg-slate-50 border border-slate-200 rounded-xl p-4 flex flex-col justify-center">
+                    <div class="text-slate-600 text-sm font-semibold mb-1">Kes Baru (Terkumpul)</div>
+                    <div class="text-2xl font-bold text-slate-900">${totalBaru.toLocaleString()}</div>
+                </div>
+                <div class="bg-red-50 border border-red-100 rounded-xl p-4 flex flex-col justify-center">
+                    <div class="text-red-500 text-sm font-semibold mb-1">Kematian</div>
+                    <div class="text-2xl font-bold text-red-900">${totalMati.toLocaleString()}</div>
+                </div>
+            `;
         }
     </script>
 </body>
