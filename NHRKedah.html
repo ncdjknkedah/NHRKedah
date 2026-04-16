@@ -90,6 +90,7 @@
                             <th class="py-3 px-4 text-right text-red-500">Mati</th>
                             <th class="py-3 px-4 text-right text-orange-500">LFU</th>
                             <th class="py-3 px-4 text-right text-blue-600">Diag Tahun Semasa</th>
+                            <th class="py-3 px-4 text-right text-slate-500">Tarikh Kemaskini</th>
                         </tr>
                     </thead>
                     <tbody id="table-body">
@@ -156,7 +157,8 @@
                                     dm: parseInt(row[19] || 0),
                                     mati: parseInt(row[20] || 0),
                                     lfu: parseInt(row[21] || 0),
-                                    diagnosaSemasa: parseInt(row[22] || 0)
+                                    diagnosaSemasa: parseInt(row[22] || 0),
+                                    tarikhKemaskini: row[23] ? row[23].trim() : '-'
                                 });
                             }
                         });
@@ -212,6 +214,7 @@
                     <td class="text-right text-red-500">${d.mati.toLocaleString()}</td>
                     <td class="text-right text-orange-500">${d.lfu.toLocaleString()}</td>
                     <td class="text-right font-medium text-blue-600">${d.diagnosaSemasa.toLocaleString()}</td>
+                    <td class="text-right text-xs text-slate-500">${d.tarikhKemaskini}</td>
                 `;
                 tbody.appendChild(tr);
             });
@@ -312,7 +315,7 @@
                     pendaftaran: parseInt(r[2].replace(/,/g, '')),
                     aktif: parseInt(r[5].replace(/,/g, '')),
                     kesBaru: parseInt(r[3].replace(/,/g, '')),
-                    mati: parseInt(r[8].replace(/,/g, '')),
+                    transferIn: parseInt(r[4].replace(/,/g, '')),
                     diagnosaSemasa: parseInt(r[10].replace(/,/g, ''))
                 });
             }
@@ -320,14 +323,14 @@
         }
 
         function updateSummaryCards(dataList) {
-            let totalDaftar = 0, totalAktif = 0, totalBaru = 0, totalMati = 0, totalDiagSemasa = 0;
+            let totalDaftar = 0, totalAktif = 0, totalBaru = 0, totalTransferIn = 0, totalDiagSemasa = 0;
             
             dataList.forEach(d => {
                 totalDaftar += d.pendaftaran || 0;
                 totalAktif += d.aktif || 0;
                 totalBaru += d.kesBaru || 0;
-                totalMati += d.mati || 0;
-                totalDiagSemasa += (d.diagnosaSemasa || d.diagnosaSemasa); // Fix key map
+                totalTransferIn += d.transferIn || 0;
+                totalDiagSemasa += d.diagnosaSemasa || 0;
             });
 
             const cardsDiv = document.getElementById('summary-cards');
@@ -348,9 +351,9 @@
                     <div class="text-slate-600 text-sm font-semibold mb-1">Kes Baru (Terkumpul)</div>
                     <div class="text-2xl font-bold text-slate-900">${totalBaru.toLocaleString()}</div>
                 </div>
-                <div class="bg-red-50 border border-red-100 rounded-xl p-4 flex flex-col justify-center">
-                    <div class="text-red-500 text-sm font-semibold mb-1">Kematian</div>
-                    <div class="text-2xl font-bold text-red-900">${totalMati.toLocaleString()}</div>
+                <div class="bg-teal-50 border border-teal-100 rounded-xl p-4 flex flex-col justify-center">
+                    <div class="text-teal-600 text-sm font-semibold mb-1">Kes Transfer In</div>
+                    <div class="text-2xl font-bold text-teal-900">${totalTransferIn.toLocaleString()}</div>
                 </div>
             `;
         }
