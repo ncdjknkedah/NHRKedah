@@ -284,6 +284,9 @@
             
             if(tabId === 'analitik') {
                 setTimeout(renderDemographyView, 50); // Small delay allows container to be displayed first (fixes chart sizing)
+            } else if(tabId === 'senarai' && table) {
+                // Memaksa jadual menyusun lebar lajur dengan betul jika kembali dari tab analitik
+                setTimeout(() => { table.columns.adjust(); }, 50);
             }
         }
 
@@ -366,9 +369,19 @@
 
             table = $('#klinik-table').DataTable({
                 pageLength: 15,
-                scrollX: true, // Enable horizontal scroll for datatables nicely
-                language: { search: "Cari:", lengthMenu: "Papar _MENU_ baris", info: "_START_ - _END_ dari _TOTAL_" }
+                scrollX: true, 
+                autoWidth: false, // Menghalang auto-calculation lebar lajur lalai DataTables
+                language: { search: "Cari:", lengthMenu: "Papar _MENU_ baris", info: "_START_ - _END_ dari _TOTAL_" },
+                columnDefs: [
+                    { width: '130px', targets: 0 }, // Tetapkan lebar khusus lajur Daerah
+                    { width: '230px', targets: 1 }  // Tetapkan lebar khusus lajur Klinik Kesihatan
+                ]
             });
+
+            // Menyusun penjajaran lajur dengan tepat sejurus selepas data dimuatkan
+            setTimeout(() => {
+                table.columns.adjust().draw();
+            }, 150);
 
             const selectD = document.getElementById('filter-daerah');
             const selectKK = document.getElementById('filter-kk');
@@ -381,9 +394,11 @@
                 selectKK.innerHTML = '<option value="">Semua Klinik</option>';
                 const filteredKKs = [...new Set(allData.filter(d => this.value==="" || d.daerah === this.value).map(d => d.kk))].sort();
                 filteredKKs.forEach(kk => selectKK.append(new Option(kk, kk)));
+                table.columns.adjust();
             });
             selectKK.addEventListener('change', function() {
                 table.column(1).search(this.value).draw();
+                table.columns.adjust();
             });
 
             updateSummaryCards(allData);
@@ -406,6 +421,7 @@
             document.getElementById('filter-daerah').dispatchEvent(new Event('change'));
             document.getElementById('filter-kk').value = "";
             table.search('').columns().search('').draw();
+            table.columns.adjust();
         }
 
         function updateSummaryCards(dList) {
