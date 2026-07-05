@@ -5,16 +5,12 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Dashboard Registri Hipertensi JKN Kedah</title>
     
-    <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
     
-    <!-- DataTables CSS for Tailwind -->
     <link rel="stylesheet" type="text/css" href="https://cdn.datatables.net/v/dt/dt-1.13.2/datatables.min.css"/>
     
-    <!-- Chart.js -->
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 
-    <!-- FontAwesome for Icons -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     
     <style>
@@ -72,17 +68,14 @@
 </head>
 <body class="text-slate-800 antialiased flex h-screen overflow-hidden">
 
-    <!-- Mobile Overlay -->
     <div id="mobile-overlay" class="fixed inset-0 bg-slate-900 bg-opacity-50 z-20 hidden transition-opacity" onclick="toggleSidebar()"></div>
 
-    <!-- Sidebar -->
     <aside id="app-sidebar" class="bg-slate-900 text-slate-300 flex-col shadow-xl z-30 transition-transform duration-300 ease-in-out fixed md:relative h-full w-64 -translate-x-full md:translate-x-0 flex flex-shrink-0">
         <div class="p-6 border-b border-slate-800 flex justify-between items-center">
             <div class="flex items-center gap-3">
                 <i class="fa-solid fa-heart-pulse text-emerald-500 text-2xl"></i>
                 <h1 class="text-xl font-bold text-white tracking-tight leading-tight">NHRKedah</h1>
             </div>
-            <!-- Mobile Close Button inside sidebar -->
             <button onclick="toggleSidebar()" class="md:hidden text-slate-400 hover:text-white p-1">
                 <i class="fa-solid fa-xmark text-xl"></i>
             </button>
@@ -98,6 +91,10 @@
                 <i class="fa-solid fa-chart-pie w-5 text-center"></i>
                 Analisa Demografi
             </a>
+            <a href="https://sites.google.com/moh.gov.my/htn-registry-audit-2025/state-hypertension-registry/kedah" target="_blank" class="sidebar-link flex items-center gap-3 px-4 py-3 rounded-lg hover:bg-slate-800 text-sm font-medium text-slate-300">
+                <i class="fa-solid fa-arrow-up-right-from-square w-5 text-center text-slate-400"></i>
+                National Hypertension Registry (Kedah)
+            </a>
         </nav>
 
         <div class="p-4 border-t border-slate-800 text-xs text-slate-500 hidden md:block">
@@ -105,10 +102,8 @@
         </div>
     </aside>
 
-    <!-- Main Content Area -->
     <main class="flex-1 bg-slate-50 overflow-y-auto relative hidden-scroll flex flex-col w-full">
         
-        <!-- Top Nav Bar (Global) -->
         <div class="bg-white px-4 md:px-6 py-3 shadow-sm border-b border-slate-200 flex items-center justify-between sticky top-0 z-10 w-full">
             <div class="flex items-center">
                 <button onclick="toggleSidebar()" class="p-2 mr-3 md:mr-4 bg-slate-100 hover:bg-slate-200 rounded-lg text-slate-600 transition-colors focus:outline-none" aria-label="Toggle Sidebar">
@@ -122,17 +117,14 @@
         </div>
 
         <div class="flex-1 p-4 md:p-8 max-w-[100vw] overflow-x-hidden">
-            <!-- ======================= TAB: SENARAI PENDAFTARAN ======================= -->
             <div id="view-senarai" class="w-full block">
                 <header class="mb-6 md:mb-8">
                     <h2 class="text-2xl md:text-3xl font-bold tracking-tight text-slate-900 break-words">Senarai Pendaftaran Di Fasiliti</h2>
                     <p class="text-sm md:text-base text-slate-500 mt-1">Jadual terperinci maklumat perawatan pesakit</p>
                 </header>
 
-                <!-- Metric Cards -->
                 <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-3 md:gap-4 mb-6" id="summary-cards"></div>
 
-                <!-- Filters -->
                 <div class="bg-white p-4 rounded-xl shadow-sm border border-slate-200 mb-6 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
                     <div>
                         <label class="block text-xs md:text-sm font-medium text-slate-700 mb-1">Tapis Daerah</label>
@@ -153,7 +145,6 @@
                     </div>
                 </div>
 
-                <!-- Table -->
                 <div class="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden w-full">
                     <div class="p-3 md:p-4 overflow-x-auto">
                         <table id="klinik-table" class="stripe hover w-full text-xs md:text-sm whitespace-nowrap">
@@ -179,7 +170,6 @@
                 </div>
             </div>
 
-            <!-- ======================= TAB: ANALITIK DEMOGRAFI ======================= -->
             <div id="view-analitik" class="w-full hidden">
                 <header class="mb-6 md:mb-8 flex flex-col sm:flex-row justify-between sm:items-end gap-3">
                     <div>
@@ -188,7 +178,6 @@
                     </div>
                 </header>
 
-                <!-- Demography Controls -->
                 <div class="bg-white p-4 md:p-6 rounded-xl shadow-sm border border-slate-200 mb-6 font-medium text-sm">
                     
                     <div class="flex flex-col md:flex-row items-start md:items-center gap-4 mb-4 pb-4 border-b border-slate-100">
@@ -208,16 +197,13 @@
                             </label>
                         </div>
                         <div class="checkbox-grid bg-slate-50 border border-slate-100 p-3 md:p-4 rounded-lg max-h-56 overflow-y-auto" id="kk-checkbox-list">
-                            <!-- Checkboxes populated via JS -->
-                        </div>
+                            </div>
                     </div>
 
                 </div>
 
-                <!-- Demography Dynamic Output Container -->
                 <div id="demo-output-container" class="min-h-[400px]">
-                    <!-- Will render Scorecards OR Charts based on selection count -->
-                </div>
+                    </div>
                 
             </div>
             
@@ -227,7 +213,6 @@
         </div>
     </main>
 
-    <!-- Scripts -->
     <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
     <script type="text/javascript" src="https://cdn.datatables.net/v/dt/dt-1.13.2/datatables.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.4.1/papaparse.min.js"></script>
