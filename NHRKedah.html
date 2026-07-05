@@ -242,15 +242,16 @@
             const overlay = document.getElementById('mobile-overlay');
 
             if(window.innerWidth < 768) {
-                // Mobile behavior: Slide in/out and show overlay
                 sidebar.classList.toggle('-translate-x-full');
                 overlay.classList.toggle('hidden');
             } else {
-                // Desktop behavior: Hide the entire sidebar to maximize space
                 sidebar.classList.toggle('md:hidden');
                 
-                // Allow charts to resize correctly when grid container width shrinks/grows
+                // PEMBETULAN: Letak kelewatan 310ms (menunggu selesai animasi css sidebar) sebelum lajur dikira semula
                 setTimeout(() => {
+                    if (table) {
+                        table.columns.adjust().draw(false);
+                    }
                     Object.values(demCharts).forEach(chart => {
                         if(chart && typeof chart.resize === 'function') chart.resize();
                     });
@@ -263,12 +264,13 @@
             const sidebar = document.getElementById('app-sidebar');
             const overlay = document.getElementById('mobile-overlay');
             if(window.innerWidth >= 768) {
-                sidebar.classList.remove('-translate-x-full'); // Reset mobile slide class
-                overlay.classList.add('hidden'); // Ensure overlay is hidden on large screens
+                sidebar.remove('-translate-x-full'); 
+                overlay.classList.add('hidden'); 
             } else {
-                sidebar.classList.add('-translate-x-full'); // Hide by default on mobile
-                sidebar.classList.remove('md:hidden'); // Reset desktop hide class
+                sidebar.classList.add('-translate-x-full'); 
+                sidebar.classList.remove('md:hidden'); 
             }
+            setTimeout(() => { if(table) table.columns.adjust(); }, 350);
         });
 
         // Tab Switching
@@ -283,10 +285,10 @@
             document.getElementById('view-' + tabId).classList.remove('hidden');
             
             if(tabId === 'analitik') {
-                setTimeout(renderDemographyView, 50); // Small delay allows container to be displayed first (fixes chart sizing)
+                setTimeout(renderDemographyView, 50); 
             } else if(tabId === 'senarai' && table) {
-                // Memaksa jadual menyusun lebar lajur dengan betul jika kembali dari tab analitik
-                setTimeout(() => { table.columns.adjust(); }, 50);
+                // Beri kelewatan sedikit agar elemen jadual yang disorok sedia dipaparkan semula sepenuhnya
+                setTimeout(() => { table.columns.adjust().draw(false); }, 100);
             }
         }
 
@@ -370,18 +372,18 @@
             table = $('#klinik-table').DataTable({
                 pageLength: 15,
                 scrollX: true, 
-                autoWidth: false, // Menghalang auto-calculation lebar lajur lalai DataTables
+                autoWidth: false, 
                 language: { search: "Cari:", lengthMenu: "Papar _MENU_ baris", info: "_START_ - _END_ dari _TOTAL_" },
                 columnDefs: [
-                    { width: '130px', targets: 0 }, // Tetapkan lebar khusus lajur Daerah
-                    { width: '230px', targets: 1 }  // Tetapkan lebar khusus lajur Klinik Kesihatan
+                    { width: '130px', targets: 0 }, 
+                    { width: '230px', targets: 1 }  
                 ]
             });
 
-            // Menyusun penjajaran lajur dengan tepat sejurus selepas data dimuatkan
+            // Pengiraan asal lajur selepas data pertama kali selesai diisi
             setTimeout(() => {
-                table.columns.adjust().draw();
-            }, 150);
+                table.columns.adjust().draw(false);
+            }, 300);
 
             const selectD = document.getElementById('filter-daerah');
             const selectKK = document.getElementById('filter-kk');
@@ -394,11 +396,11 @@
                 selectKK.innerHTML = '<option value="">Semua Klinik</option>';
                 const filteredKKs = [...new Set(allData.filter(d => this.value==="" || d.daerah === this.value).map(d => d.kk))].sort();
                 filteredKKs.forEach(kk => selectKK.append(new Option(kk, kk)));
-                table.columns.adjust();
+                setTimeout(() => { table.columns.adjust(); }, 50);
             });
             selectKK.addEventListener('change', function() {
                 table.column(1).search(this.value).draw();
-                table.columns.adjust();
+                setTimeout(() => { table.columns.adjust(); }, 50);
             });
 
             updateSummaryCards(allData);
@@ -421,7 +423,7 @@
             document.getElementById('filter-daerah').dispatchEvent(new Event('change'));
             document.getElementById('filter-kk').value = "";
             table.search('').columns().search('').draw();
-            table.columns.adjust();
+            setTimeout(() => { table.columns.adjust(); }, 50);
         }
 
         function updateSummaryCards(dList) {
@@ -609,7 +611,7 @@
         function getCommonOptions(titleText, isStackedX = false, isStackedY = false) {
             return {
                 responsive: true,
-                maintainAspectRatio: false, // very important for mobile chart flex containers
+                maintainAspectRatio: false, 
                 plugins: {
                     title: { display: true, text: titleText, padding: {top:10, bottom:15}, font: {size: 13} },
                     legend: { position: 'bottom', labels: { boxWidth: 12, font: {size: 11} } }
@@ -731,7 +733,7 @@
 
             // Diagnosa Tahun Semasa
             demCharts.diag = new Chart(document.getElementById('chart-diag'), {
-                type: 'line', // using line/bar mix or simple bar
+                type: 'line', 
                 data: {
                     labels: labels,
                     datasets: [
